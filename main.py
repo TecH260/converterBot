@@ -139,8 +139,8 @@ def GetSumm(message):
         bot.send_message(chat_id, text, reply_markup=markupStatus, parse_mode="HTML")
 
         textProfit = f"<b>Комиссия по сделке {order['idOrder']}</b> \n"
-        textProfit += f"{format(order["profit"], '.2f')} {Bid.Money.upper()} \n"
-        textProfit += f"{format(order["profitCrypto"], '.2f')} {Bid.Crypto.upper()} \n"
+        textProfit += f"{format(order['profit'], '.2f')} {Bid.Money.upper()} \n"
+        textProfit += f"{format(order['profitCrypto'], '.2f')} {Bid.Crypto.upper()} \n"
         bot.send_message(chat_id, textProfit, parse_mode="HTML")
 
 #ADMIN
