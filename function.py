@@ -38,14 +38,34 @@ def generateBid(userBid):
         if userBid.PercentMoney == "money":
             summ = float(userBid.summ) / float(rate)
             percent = userBid.Percent * summ
-            summ = summ - percent
+            if userBid.Money == "usd":
+                percentEx = 0.002 * summ 
+            else: 
+                percentEx = 0.0025 * summ
+            if userBid.Crypto == "usdt":
+                summ = summ - percent - percentEx - 2.5 
+            else: 
+                summ = summ - percent - percentEx - 0.00015
             profit = percent * float(rate)
             profitCrypto = profit / float(rate)
         elif userBid.PercentMoney == "crypto":
-            summ = (userBid.Percent * float(userBid.summ) + float(userBid.summ)) * float(rate)
-            profit = summ - (float(userBid.summ) * float(rate))
+            if userBid.Crypto == "usdt" and userBid.Money == "rub":
+                summ = (userBid.Percent * float(userBid.summ) + float(userBid.summ) + 2.5 + 0.0025 * float(userBid.summ)) * float(rate)
+                profit = summ - ((float(userBid.summ) + 2.5 + 0.0025 * float(userBid.summ)) * float(rate))
+                summ = format(summ, '.2f')
+            elif userBid.Crypto == "usdt" and userBid.Money == "usd":
+                summ = (userBid.Percent * float(userBid.summ) + float(userBid.summ) + 2.5 + 0.002* float(userBid.summ)) * float(rate)
+                profit = summ - ((float(userBid.summ) + 2.5 + 0.002 * float(userBid.summ)) * float(rate))
+                summ = format(summ, '.2f')
+            elif userBid.Crypto == "btc" and userBid.Money == "rub":
+                summ = (userBid.Percent * float(userBid.summ) + float(userBid.summ) + 0.00015 + 0.0025* float(userBid.summ)) * float(rate)
+                profit = summ - ((float(userBid.summ) + 0.00015 + 0.0025 * float(userBid.summ)) * float(rate))
+                summ = format(summ, '.6f')
+            elif userBid.Crypto == "btc" and userBid.Money == "usd":
+                summ = (userBid.Percent * float(userBid.summ) + float(userBid.summ) + 0.00015 + 0.0025* float(userBid.summ)) * float(rate)
+                profit = summ - ((float(userBid.summ) + 0.00015 + 0.002 * float(userBid.summ)) * float(rate))
+                summ = format(summ, '.6f')
             profitCrypto = profit / float(rate)
-        summ = format(summ, '.2f')
 
         param["summ"] = summ
         param["price"] = rate
@@ -147,7 +167,7 @@ def writeOrderBase(order):
 def orderUpdate(id, status):
     connection = sqlite3.connect('base.db')
     cursor = connection.cursor()
-    cursor.execute(f'UPDATE order SET status = {status} WHERE id = {id}')
+    cursor.execute(f'UPDATE orders SET status = {status} WHERE id = {id}')
     connection.commit()
     connection.close()
     return True
