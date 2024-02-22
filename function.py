@@ -35,40 +35,43 @@ def generateBid(userBid):
         return False
     else:
         rate = depth[userBid.typeBid][0]["price"]
+        rateCom = float(rate) + 0.002 * float(rate)
+        rateComCard = rateCom + 0.02 * float(rate)
+
+        rateComUser = rateCom + userBid.Percent * float(rate)
+        rateComUserCard = rateComCard + userBid.Percent * float(rate)
+
         if userBid.PercentMoney == "money":
-            summ = float(userBid.summ) / float(rate)
-            percent = userBid.Percent * summ
-            if userBid.Money == "usd":
-                percentEx = 0.002 * summ 
-            else: 
-                percentEx = 0.0025 * summ
+            summ = float(userBid.summ) / rateComUser
+            summCard = float(userBid.summ) / rateComUserCard
+            percent = float(userBid.summ) / rateCom - summ
             if userBid.Crypto == "usdt":
-                summ = summ - percent - percentEx - 2.5 
-            else: 
-                summ = summ - percent - percentEx - 0.00015
-            profit = percent * float(rate)
+                summ = format(summ, '.2f')
+                summCard = format(summCard, '.2f')
+            else:
+                summ = format(summ, '.6f')
+                summCard = format(summCard, '.6f')
+            profit = percent * rateCom
             profitCrypto = profit / float(rate)
         elif userBid.PercentMoney == "crypto":
-            if userBid.Crypto == "usdt" and userBid.Money == "rub":
-                summ = (userBid.Percent * float(userBid.summ) + float(userBid.summ) + 2.5 + 0.0025 * float(userBid.summ)) * float(rate)
-                profit = summ - ((float(userBid.summ) + 2.5 + 0.0025 * float(userBid.summ)) * float(rate))
+            if userBid.Crypto == "usdt":
+                summ = float(userBid.summ) * rateComUser
+                summCard = float(userBid.summ) * rateComUserCard
+                profit = summ - (float(userBid.summ) * float(rateCom))
                 summ = format(summ, '.2f')
-            elif userBid.Crypto == "usdt" and userBid.Money == "usd":
-                summ = (userBid.Percent * float(userBid.summ) + float(userBid.summ) + 2.5 + 0.002* float(userBid.summ)) * float(rate)
-                profit = summ - ((float(userBid.summ) + 2.5 + 0.002 * float(userBid.summ)) * float(rate))
-                summ = format(summ, '.2f')
-            elif userBid.Crypto == "btc" and userBid.Money == "rub":
-                summ = (userBid.Percent * float(userBid.summ) + float(userBid.summ) + 0.00015 + 0.0025* float(userBid.summ)) * float(rate)
-                profit = summ - ((float(userBid.summ) + 0.00015 + 0.0025 * float(userBid.summ)) * float(rate))
+                summCard = format(summCard, '.2f')
+            elif userBid.Crypto == "btc":
+                summ = float(userBid.summ) * rateComUser
+                summCard = float(userBid.summ) * rateComUserCard
+                profit = summ - (float(userBid.summ) * float(rateCom))
                 summ = format(summ, '.6f')
-            elif userBid.Crypto == "btc" and userBid.Money == "usd":
-                summ = (userBid.Percent * float(userBid.summ) + float(userBid.summ) + 0.00015 + 0.0025* float(userBid.summ)) * float(rate)
-                profit = summ - ((float(userBid.summ) + 0.00015 + 0.002 * float(userBid.summ)) * float(rate))
-                summ = format(summ, '.6f')
-            profitCrypto = profit / float(rate)
+                summCard = format(summCard, '.6f')
+            profitCrypto = profit / float(rateCom)
 
-        param["summ"] = summ
-        param["price"] = rate
+        param["summ"] = format(float(summ), '.2f')
+        param["summCard"] = format(float(summCard), '.2f')
+        param["price"] = format(rateComUser, '.2f') if userBid.Crypto == "usdt" else (format(rateComUser, '.7f'))
+        param["priceCard"] = format(rateComUserCard, '.2f') if userBid.Crypto == "usdt" else (format(rateComUserCard, '.7f'))
         param["profit"] = profit
         param["profitCrypto"] = profitCrypto
 
@@ -171,6 +174,31 @@ def orderUpdate(id, status):
     connection.commit()
     connection.close()
     return True
+
+def orderUpdateIdMessage(id, id_message, textProfit):
+    connection = sqlite3.connect('base.db')
+    cursor = connection.cursor()
+    cursor.execute(f'UPDATE orders SET id_message = "{id_message}", textProfit = "{textProfit}" WHERE id = {id}')
+    connection.commit()
+    connection.close()
+    return True
+
+def orderIdMessage(orderId, priceTo):
+    connection = sqlite3.connect('base.db')
+    cursor = connection.cursor()
+    cursor.execute(f'SELECT id_message, textProfit, price FROM orders WHERE id = {orderId}')
+    message = cursor.fetchall()
+    for mes in message:
+        res = list()
+        res.append(mes[0])
+        res.append(mes[1])
+        res.append(mes[2])
+        spred = float(mes[2]) - float(priceTo)
+        res.append(spred)
+        cursor.execute(f'UPDATE orders SET priceSend = "{priceTo}", spred = "{spred}" WHERE id = {orderId}')
+        connection.commit()
+        connection.close()
+        return res
 
 def getUserStatistics(id):
     connection = sqlite3.connect('base.db')

@@ -21,7 +21,7 @@ def start(message):
     userDict[chat_id] = Bid
     if function.checkUser(message.from_user):
         markup = keyboard.GetTypeBidMarkup()
-        bot.send_message(chat_id, "Выберите нужное действие", reply_markup = markup)
+        bot.send_message(chat_id, "Клиент хочет", reply_markup = markup)
     else:
         bot.send_message(chat_id, "У вас нет прав доступа")
 
@@ -31,10 +31,9 @@ def process_callback_kb1btn1(callback_query: types.CallbackQuery):
     code = callback_query.data[3:]
     regex = "^[a-zA-Zа-яА-ЯёЁ]+$"
     pattern = re.compile(regex)
-    bot.delete_message(chat_id, callback_query.message.id)
-    print(code)
     if code.isdigit():
         code = int(code)
+        bot.delete_message(chat_id, callback_query.message.id)
         if code != 10 and code != 11:
             Bid = userDict[chat_id]
         if code <= 2:
@@ -87,9 +86,24 @@ def process_callback_kb1btn1(callback_query: types.CallbackQuery):
         print(id)
         if type == "s":
             status = 1
+            bot.edit_message_text(chat_id = chat_id, message_id=callback_query.message.message_id, text=callback_query.message.text,reply_markup=None)
+            msg = bot.send_message(chat_id, "Введите курс, по которому прошла сделка (указывайте биржевой курс)")
+            bot.register_next_step_handler(msg, UserUpdateCourse, id)
         else:
+            bot.delete_message(chat_id, callback_query.message.id)
+            bot.delete_message(chat_id, callback_query.message.id+1)
             status = 0
         function.orderUpdate(id, status)
+        
+
+def UserUpdateCourse(message, orderId):
+    chat_id = message.chat.id
+    bot.delete_message(chat_id, message.message_id)
+    bot.delete_message(chat_id, message.message_id-1)
+    id_message = function.orderIdMessage(orderId, message.text)
+    print(id_message)
+    textMes = id_message[1] + f'\n <b>Спред:</b> {format(id_message[3], '.2f')}' 
+    bot.edit_message_text(chat_id = chat_id, message_id=id_message[0], text= textMes, parse_mode="HTML")
 
 def GetSumm(message):
     chat_id = message.chat.id
@@ -116,18 +130,18 @@ def GetSumm(message):
             text += "Продажа\n"
 
         if Bid.PercentMoney == 'crypto':
-            text += f"{format(float(Bid.summ), '.2f')} {Bid.Crypto.upper()} \n"
+            text += f"{format(float(Bid.summ), '.2f')} {Bid.Crypto.upper()} \n" if Bid.Crypto == "usdt" else f"{format(float(Bid.summ), '.6f')} {Bid.Crypto.upper()} \n"
             text += "💳 Онлайн-платеж:\n"
-            text += f"Клиент платит: {order['summ']} {money}\n" if Bid.typeBid == "asks" else f"Клиент получает: {order['summ']} {money}\n"
-            text += f"➡️ Курс {Bid.Crypto.upper()}/{Bid.Money.upper()}: {order['price']} {money}\n\n"
+            text += f"Клиент платит: {order['summCard']} {money}\n" if Bid.typeBid == "asks" else f"Клиент получает: {order['summCard']} {money}\n"
+            text += f"➡️ Курс {Bid.Crypto.upper()}/{Bid.Money.upper()}: {order['priceCard']} {money}\n\n"
             text += "💵 Наличные:\n"
             text += f"Клиент платит: {order['summ']} {money}\n" if Bid.typeBid == "asks" else f"Клиент получает: {order['summ']} {money}\n"
             text += f"➡️ Курс {Bid.Crypto.upper()}/{Bid.Money.upper()}: {order['price']} {money}\n\n✅ Курс фиксируется на 1 час"
         else:
             text += f"{Bid.Crypto.upper()} на сумму {format(float(Bid.summ), '.2f')} {money}\n"
             text += "💳 Онлайн-платеж:\n"
-            text += f"Клиент покупает: {order['summ']} {Bid.Crypto.upper()}\n" if Bid.typeBid == "asks" else f"Клиент получает: {order['summ']} {money}\n"
-            text += f"➡️ Курс {Bid.Crypto.upper()}/{Bid.Money.upper()}: {order['price']} {money}\n\n"
+            text += f"Клиент покупает: {order['summCard']} {Bid.Crypto.upper()}\n" if Bid.typeBid == "asks" else f"Клиент получает: {order['summCard']} {money}\n"
+            text += f"➡️ Курс {Bid.Crypto.upper()}/{Bid.Money.upper()}: {order['priceCard']} {money}\n\n"
             text += "💵 Наличные:\n"
             text += f"Клиент покупает: {order['summ']} {Bid.Crypto.upper()}\n" if Bid.typeBid == "asks" else f"Клиент получает: {order['summ']} {money}\n"
             text += f"➡️ Курс {Bid.Crypto.upper()}/{Bid.Money.upper()}: {order['price']} {money}\n\n✅ Курс фиксируется на 1 час"
@@ -141,7 +155,8 @@ def GetSumm(message):
         textProfit = f"<b>Комиссия по сделке {order['idOrder']}</b> \n"
         textProfit += f"{format(order['profit'], '.2f')} {Bid.Money.upper()} \n"
         textProfit += f"{format(order['profitCrypto'], '.2f')} {Bid.Crypto.upper()} \n"
-        bot.send_message(chat_id, textProfit, parse_mode="HTML")
+        msg = bot.send_message(chat_id, textProfit, parse_mode="HTML")
+        function.orderUpdateIdMessage(order['idOrder'], msg.id, textProfit)
 
 #ADMIN
 @bot.message_handler(commands = ["admin"])
