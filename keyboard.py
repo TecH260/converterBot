@@ -16,15 +16,15 @@ def GetTypeCryptoMarkup():
 
 def GetTypeMoneyMarkup():
     markup = types.InlineKeyboardMarkup()
-    inline_btn_usdt = types.InlineKeyboardButton('Рубли (₽)', callback_data='btn5')
-    inline_btn_crypto = types.InlineKeyboardButton('Доллары ($)', callback_data='btn6')
+    inline_btn_usdt = types.InlineKeyboardButton('🇷🇺 Рубли (₽)', callback_data='btn5')
+    inline_btn_crypto = types.InlineKeyboardButton('🇺🇸 Доллары ($)', callback_data='btn6')
     markup.add(inline_btn_usdt, inline_btn_crypto)
     return markup
 
 def GetTypePercentMarkup():
     markup = types.InlineKeyboardMarkup()
-    inline_btn_crypto = types.InlineKeyboardButton('От крипты', callback_data='btn7')
-    inline_btn_fiat = types.InlineKeyboardButton('От Фиата', callback_data='btn8')
+    inline_btn_crypto = types.InlineKeyboardButton('Валюты', callback_data='btn8')
+    inline_btn_fiat = types.InlineKeyboardButton('Криптовалюты', callback_data='btn7')
     markup.add(inline_btn_crypto, inline_btn_fiat)
     return markup
 

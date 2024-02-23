@@ -7,8 +7,12 @@ import datetime
 import random
 import requests
 import jwt
+import re
+import locale
 
 import config
+
+locale.setlocale(locale.LC_ALL, "ru_RU.UTF-8")
 
 class Bid:
     def __init__(self, id):
@@ -68,8 +72,8 @@ def generateBid(userBid):
                 summCard = format(summCard, '.6f')
             profitCrypto = profit / float(rateCom)
 
-        param["summ"] = format(float(summ), '.2f')
-        param["summCard"] = format(float(summCard), '.2f')
+        param["summ"] = '{:,}'.format(float(summ)).replace(',', ' ')
+        param["summCard"] = '{:,}'.format(float(summCard)).replace(',', ' ')
         param["price"] = format(rateComUser, '.2f') if userBid.Crypto == "usdt" else (format(rateComUser, '.7f'))
         param["priceCard"] = format(rateComUserCard, '.2f') if userBid.Crypto == "usdt" else (format(rateComUserCard, '.7f'))
         param["profit"] = profit
@@ -217,6 +221,3 @@ def getOrders():
     cursor.execute(f'SELECT * FROM orders')
     orders = cursor.fetchall()
     return orders
-
-
-    

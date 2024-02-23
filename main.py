@@ -39,10 +39,10 @@ def process_callback_kb1btn1(callback_query: types.CallbackQuery):
         if code <= 2:
             markupCrypto = keyboard.GetTypeCryptoMarkup()
             if code == 1:
-                bot.send_message(chat_id, "Выберите что клиент хочет Купить", reply_markup = markupCrypto)
+                bot.send_message(chat_id, "Клиент хочет купить", reply_markup = markupCrypto)
                 Bid.typeBid = "asks"
             elif code == 2:
-                bot.send_message(chat_id, "Выберите что клиент хочет Продать", reply_markup = markupCrypto)
+                bot.send_message(chat_id, "Клиент хочет продать", reply_markup = markupCrypto)
                 Bid.typeBid = "bids"
         elif code >= 3 and code <= 4:
             if code == 3:
@@ -50,26 +50,88 @@ def process_callback_kb1btn1(callback_query: types.CallbackQuery):
             elif code == 4:
                 Bid.Crypto = "btc"
             markupMoney = keyboard.GetTypeMoneyMarkup()
-            bot.send_message(chat_id, "Выберите валюту", reply_markup=markupMoney)
+            if Bid.typeBid == "asks":
+                bot.send_message(chat_id, f"Клиент хочет купить {Bid.Crypto.upper()} за", reply_markup=markupMoney)
+            else:
+                bot.send_message(chat_id, f"Клиент хочет продать {Bid.Crypto.upper()} за", reply_markup=markupMoney)
         elif code >= 5 and code <= 6:
             if code == 5:
                 Bid.Money = "rub"
             elif code == 6:
                 Bid.Money = "usd"
             markupMoney = keyboard.GetTypePercentMarkup()
-            bot.send_message(chat_id, "Выберите от чего считать комиссию", reply_markup=markupMoney)
+            if Bid.typeBid == "asks":
+                bot.send_message(chat_id, f"Клиент хочет купить {Bid.Crypto.upper()} за {Bid.Money.upper()}\nРасчет суммы сделки от", reply_markup=markupMoney)
+            else:
+                bot.send_message(chat_id, f"Клиент хочет продать {Bid.Crypto.upper()} за {Bid.Money.upper()}\nРасчет суммы сделки от", reply_markup=markupMoney)
         elif code >= 7 and code <= 8:
             if code == 7:
                 Bid.PercentMoney = "crypto"
             elif code == 8:
                 Bid.PercentMoney = "money"
-            markupMoney = keyboard.GetFreeMarkup()
-            bot.send_message(chat_id, "Выберите Процент", reply_markup=markupMoney)
+            msg = bot.send_message(chat_id, "Сумма сделки")
+            bot.register_next_step_handler(msg, GetSumm)
         elif code >= 20:
             Bid.Percent = code/10000
             print(Bid.Percent)
-            msg = bot.send_message(chat_id, "Введите сумму (если сумма имеет десятые укажите их через точку 100.56)")
-            bot.register_next_step_handler(msg, GetSumm)
+            msg = bot.send_message(chat_id, "Ваши данные получены")
+            order = function.generateBid(Bid)
+            if order == False:
+                bot.send_message(chat_id, 'Не настроен API, обратитесь к администратору')
+            else:
+                print(order)
+                if Bid.Money == 'rub':
+                    money = '₽'
+                else:
+                    money = '$'
+
+                text = f"🔴 <b>Заявка {order['idOrder']}:</b>\n"
+                if Bid.typeBid == "asks":
+                    text += "\nПокупка: "
+                else:
+                    text += "Продажа: "
+
+                if Bid.PercentMoney == 'crypto':
+                    if Bid.Crypto == "usdt":
+                        summ = format(float(Bid.summ), '.2f')
+                    else:
+                        summ = format(float(Bid.summ), '.6f')
+                    summ = '{:,}'.format(float(summ)).replace(',', ' ')
+                    text += f"{summ} {Bid.Crypto.upper()} \n\n"
+                    
+                    text += "✅ Наличные в офисе:\n"
+                    text += f"📍 Курс {Bid.Crypto.upper()}/{Bid.Money.upper()}: {order['price']} {money}\n"
+                    text += f"📍 Клиент платит: {order['summ']} {money}\n" if Bid.typeBid == "asks" else f"📍 Клиент получает: {order['summ']} {money}\n"
+                    text += f"🔒 Курс фиксируется на 1 час\n\n"
+                    text += "🔘 Онлайн-платеж:\n"
+                    text += f"📍 Клиент платит: {order['summCard']} {money}\n" if Bid.typeBid == "asks" else f"📍 Клиент получает: {order['summCard']} {money}\n"
+                    text += f"📍 Курс {Bid.Crypto.upper()}/{Bid.Money.upper()}: {order['priceCard']} {money}\n\n"
+                    
+                else:
+                    if Bid.Crypto == "usdt":
+                        summ = format(float(Bid.summ), '.2f')
+                    summ = '{:,}'.format(float(summ)).replace(',', ' ')
+                    text += f"{Bid.Crypto.upper()} на сумму {summ} {money}\n\n"
+                    text += "✅ Наличные в офисе:\n"
+                    text += f"📍 Курс {Bid.Crypto.upper()}/{Bid.Money.upper()}: {order['price']} {money}\n"
+                    text += f"📍 Клиент покупает: {order['summ']} {Bid.Crypto.upper()}\n" if Bid.typeBid == "asks" else f"📍 Клиент получает: {order['summ']} {money}\n"
+                    text += f"🔒 Курс фиксируется на 1 час\n\n"
+                    text += "🔘 Онлайн-платеж:\n"
+                    text += f"📍 Клиент покупает: {order['summCard']} {Bid.Crypto.upper()}\n" if Bid.typeBid == "asks" else f"📍 Клиент получает: {order['summCard']} {money}\n"
+                    text += f"📍 Курс {Bid.Crypto.upper()}/{Bid.Money.upper()}: {order['priceCard']} {money}\n\n"
+                    
+
+                
+
+                markupStatus = keyboard.GetStatusBid(order['idOrder'])
+                bot.delete_message(chat_id, msg.id)
+                bot.send_message(chat_id, text, reply_markup=markupStatus, parse_mode="HTML")
+
+                textProfit = f"🟡 <b>Комиссия по сделке {order['idOrder']}</b> \n"
+                textProfit += f"📍 {format(order['profit'], '.2f')} {Bid.Money.upper()} \n"
+                textProfit += f"📍 {format(order['profitCrypto'], '.2f')} {Bid.Crypto.upper()} \n"
+                msg = bot.send_message(chat_id, textProfit, parse_mode="HTML")
+                function.orderUpdateIdMessage(order['idOrder'], msg.id, textProfit)
         elif code == 10:
             msg = bot.send_message(chat_id, "Введите id Пользователя")
             bot.register_next_step_handler(msg, UserRightsStep1)
@@ -112,51 +174,9 @@ def GetSumm(message):
 
     Bid = userDict[chat_id]
     Bid.summ = message.text
-    msg = bot.send_message(chat_id, "Ваши данные получены")
-    order = function.generateBid(Bid)
-    if order == False:
-        bot.send_message(chat_id, 'Не настроен API, обратитесь к администратору')
-    else:
-        print(order)
-        if Bid.Money == 'rub':
-            money = '₽'
-        else:
-            money = '$'
-
-        text = f"<b>Заявка {order['idOrder']}:</b>\n"
-        if Bid.typeBid == "asks":
-            text += "Покупка\n"
-        else:
-            text += "Продажа\n"
-
-        if Bid.PercentMoney == 'crypto':
-            text += f"{format(float(Bid.summ), '.2f')} {Bid.Crypto.upper()} \n" if Bid.Crypto == "usdt" else f"{format(float(Bid.summ), '.6f')} {Bid.Crypto.upper()} \n"
-            text += "💳 Онлайн-платеж:\n"
-            text += f"Клиент платит: {order['summCard']} {money}\n" if Bid.typeBid == "asks" else f"Клиент получает: {order['summCard']} {money}\n"
-            text += f"➡️ Курс {Bid.Crypto.upper()}/{Bid.Money.upper()}: {order['priceCard']} {money}\n\n"
-            text += "💵 Наличные:\n"
-            text += f"Клиент платит: {order['summ']} {money}\n" if Bid.typeBid == "asks" else f"Клиент получает: {order['summ']} {money}\n"
-            text += f"➡️ Курс {Bid.Crypto.upper()}/{Bid.Money.upper()}: {order['price']} {money}\n\n✅ Курс фиксируется на 1 час"
-        else:
-            text += f"{Bid.Crypto.upper()} на сумму {format(float(Bid.summ), '.2f')} {money}\n"
-            text += "💳 Онлайн-платеж:\n"
-            text += f"Клиент покупает: {order['summCard']} {Bid.Crypto.upper()}\n" if Bid.typeBid == "asks" else f"Клиент получает: {order['summCard']} {money}\n"
-            text += f"➡️ Курс {Bid.Crypto.upper()}/{Bid.Money.upper()}: {order['priceCard']} {money}\n\n"
-            text += "💵 Наличные:\n"
-            text += f"Клиент покупает: {order['summ']} {Bid.Crypto.upper()}\n" if Bid.typeBid == "asks" else f"Клиент получает: {order['summ']} {money}\n"
-            text += f"➡️ Курс {Bid.Crypto.upper()}/{Bid.Money.upper()}: {order['price']} {money}\n\n✅ Курс фиксируется на 1 час"
-
-        
-
-        markupStatus = keyboard.GetStatusBid(order['idOrder'])
-        bot.delete_message(chat_id, msg.id)
-        bot.send_message(chat_id, text, reply_markup=markupStatus, parse_mode="HTML")
-
-        textProfit = f"<b>Комиссия по сделке {order['idOrder']}</b> \n"
-        textProfit += f"{format(order['profit'], '.2f')} {Bid.Money.upper()} \n"
-        textProfit += f"{format(order['profitCrypto'], '.2f')} {Bid.Crypto.upper()} \n"
-        msg = bot.send_message(chat_id, textProfit, parse_mode="HTML")
-        function.orderUpdateIdMessage(order['idOrder'], msg.id, textProfit)
+    markupMoney = keyboard.GetFreeMarkup()
+    bot.send_message(chat_id, "Выберите процент", reply_markup=markupMoney)
+    
 
 #ADMIN
 @bot.message_handler(commands = ["admin"])
