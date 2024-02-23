@@ -164,7 +164,7 @@ def UserUpdateCourse(message, orderId):
     bot.delete_message(chat_id, message.message_id-1)
     id_message = function.orderIdMessage(orderId, message.text)
     print(id_message)
-    textMes = id_message[1] + f'\n <b>Спред:</b> {format(id_message[3], '.2f')}' 
+    textMes = id_message[1] + f"\n <b>Спред:</b> {format(id_message[3], '.2f')}"
     bot.edit_message_text(chat_id = chat_id, message_id=id_message[0], text= textMes, parse_mode="HTML")
 
 def GetSumm(message):
