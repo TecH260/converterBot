@@ -169,13 +169,17 @@ def UserUpdateCourse(message, orderId):
 
 def GetSumm(message):
     chat_id = message.chat.id
+
     bot.delete_message(chat_id, message.message_id)
     bot.delete_message(chat_id, message.message_id-1)
-
-    Bid = userDict[chat_id]
-    Bid.summ = message.text
-    markupMoney = keyboard.GetFreeMarkup()
-    bot.send_message(chat_id, "Выберите процент", reply_markup=markupMoney)
+    if is_digit(message.text):
+        Bid = userDict[chat_id]
+        Bid.summ = message.text
+        markupMoney = keyboard.GetFreeMarkup()
+        bot.send_message(chat_id, "Выберите процент", reply_markup=markupMoney)
+    else:
+        msg = bot.send_message(chat_id, "Сумма сделки")
+        bot.register_next_step_handler(msg, GetSumm)
     
 
 #ADMIN
@@ -218,4 +222,14 @@ def UserRightsStep2(message):
     markup = keyboard.GetAdminMarkup()
     bot.send_message(chat_id, "Выберите действие", reply_markup=markup)
 
+def is_digit(string):
+    if string.isdigit():
+       return True
+    else:
+        try:
+            float(string)
+            return True
+        except ValueError:
+            return False
+        
 bot.polling(none_stop=True, interval=0)
